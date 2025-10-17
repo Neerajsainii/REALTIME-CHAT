@@ -3,8 +3,13 @@ import user from '../models/userModel.js';
 
 export const Auth = async (req, res, next) => {
   try {
-    let token = req.headers.authorization.split(' ')[0]; //when using browser this line
-    // let token = req.headers.authorization.split(' ')[1]; //when using postman this line
+    const authHeader = req.headers.authorization || '';
+    // Support formats: "Bearer <token>" or just the token
+    let token = authHeader.startsWith('Bearer ')
+      ? authHeader.split(' ')[1]
+      : authHeader;
+    if (!token) return res.status(401).json({ error: 'No token provided' });
+
     if (token.length < 500) {
       const verifiedUser = jwt.verify(token, process.env.SECRET);
       const rootUser = await user
