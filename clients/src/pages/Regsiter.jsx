@@ -1,7 +1,6 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { GoogleLogin } from "react-google-login"
-import { gapi } from "gapi-script"
+import { GoogleLogin } from '@react-oauth/google'
 import { useEffect } from 'react'
 import { googleAuth, registerUser } from '../apis/auth'
 import { useState } from 'react'
@@ -47,29 +46,24 @@ function Regsiter() {
 
   }
 
-  const googleSuccess = async (res) => {
-    if (res?.profileObj) {
-      setIsLoading(true)
-      const response = await googleAuth({ tokenId: res.tokenId })
-      setIsLoading(false)
-      if (response.data.token) {
-        localStorage.setItem("userToken", response.data.token)
-        pageRoute("/chats")
+  const googleSuccess = async (credentialResponse) => {
+    const tokenId = credentialResponse?.credential;
+    if (tokenId) {
+      setIsLoading(true);
+      const response = await googleAuth({ tokenId });
+      setIsLoading(false);
+      if (response.data?.token) {
+        localStorage.setItem('userToken', response.data.token);
+        pageRoute('/chats');
       }
     }
-  }
+  };
   const googleFailure = (error) => {
-    toast.error("Something Went Wrong.Try Agian!")
-  }
+    toast.error('Something Went Wrong.Try Again!');
+  };
 
   useEffect(() => {
-    const initClient = () => {
-      gapi.client.init({
-        clientId: process.env.REACT_APP_CLIENT_ID,
-        scope: ''
-      });
-    };
-    gapi.load('client:auth2', initClient);
+    // Google provider initialization is handled by GoogleOAuthProvider in index.js
     const isValid = async () => {
       const data = await validUser()
       if (data?.user) {
@@ -115,16 +109,8 @@ function Regsiter() {
           </button>
           <p className='text-[#fff] text-center sm:-ml-8'>/</p>
           <GoogleLogin
-            clientId={process.env.REACT_APP_CLIENT_ID}
-            render={(renderProps) => (
-              <button style={{ borderImage: "linear-gradient(to right, rgba(0,195,154,1) 50%, rgba(224,205,115,1) 80%)", borderImageSlice: "1" }} onClick={renderProps.onClick} disabled={renderProps.disabled} aria-label="Continue with google" className="focus:ring-2 focus:ring-offset-1   py-3.5 px-4 border rounded-lg  flex items-center w-[100%]  sm:w-[96.3%]" disableElevation={true} disableFocusRipple={true}>
-                <img src="https://tuk-cdn.s3.amazonaws.com/can-uploader/sign_in-svg2.svg" alt="google" />
-                <p className="text-[base] font-medium ml-4 text-[#fff]">Continue with Google</p>
-              </button>
-            )}
             onSuccess={googleSuccess}
-            onFailure={googleFailure}
-            cookiePolicy={'single_host_origin'}
+            onError={googleFailure}
           />
         </form>
       </div>
